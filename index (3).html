@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pizarrón de fiestas</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Caveat:wght@600&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Concepto: la hoja impresa de la fiesta, con líneas punteadas donde cada quien escribe su nombre, convertida en pizarrón compartido para varios eventos. */
+:root {
+  color-scheme: light;
+  --bg: #F0F3EF;
+  --surface: #FFFFFF;
+  --ink: #17261F;
+  --muted: #58695F;
+  --line: #A9B8AF;
+  --green: #1E5C45;
+  --on-green: #FFFFFF;
+  --ok-bg: #E1EFE7;
+  --red: #A8231B;
+  --red-bg: #FBE7E4;
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-hand: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111915; --surface: #18231E; --ink: #E7EFEA; --muted: #9BAFA3; --line: #476055;
+    --green: #6DC29C; --on-green: #0E1A14; --ok-bg: #1D3329; --red: #F28B82; --red-bg: #3A1F1D;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111915; --surface: #18231E; --ink: #E7EFEA; --muted: #9BAFA3; --line: #476055;
+  --green: #6DC29C; --on-green: #0E1A14; --ok-bg: #1D3329; --red: #F28B82; --red-bg: #3A1F1D;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5;
+  padding-block: 2rem 3rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 44rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+.view { display: flex; flex-direction: column; gap: 1.5rem; }
+h1, h2 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(2rem, 7vw, 2.75rem); font-weight: 700; }
+h2 { font-size: 1.35rem; font-weight: 700; }
+p { margin: 0; }
+a { color: var(--green); }
+.eyebrow { text-transform: uppercase; letter-spacing: .12em; font-size: .75rem; font-weight: 600; color: var(--green); margin-bottom: .4rem; }
+.facts { list-style: none; padding: 0; margin: .9rem 0 0; display: flex; flex-wrap: wrap; gap: .4rem 1.25rem; font-weight: 600; }
+.facts li + li::before { content: ""; display: inline-block; width: .3rem; height: .3rem; border-radius: 50%; background: var(--line); margin-right: 1.25rem; vertical-align: middle; }
+.lead { margin-top: .9rem; color: var(--muted); max-width: 40rem; }
+.back { font-weight: 600; text-decoration: none; align-self: flex-start; }
+.back:hover { text-decoration: underline; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 1rem 1.1rem; }
+.you label, .field label { display: block; font-weight: 600; margin-bottom: .4rem; }
+.field label { font-size: .85rem; margin-bottom: .25rem; }
+input[type=text], input[type=email], input[type=number], input[type=date], input[type=time] {
+  width: 100%; font: inherit; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 8px; padding: .6rem .75rem; min-width: 0;
+}
+input::placeholder { color: var(--muted); opacity: .8; }
+:focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
+.msg { min-height: 1.4em; margin-top: .5rem; font-size: .9rem; color: var(--red); }
+
+.status { display: flex; flex-direction: column; gap: .5rem; }
+.status .big { font-family: var(--font-display); font-weight: 600; font-size: 1.1rem; }
+.track { height: .6rem; border-radius: 999px; background: var(--ok-bg); overflow: hidden; border: 1px solid var(--line); }
+.bar { height: 100%; width: 0; background: var(--green); transition: width .4s ease; }
+.small { font-size: .9rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.events { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .75rem; }
+.event-link { display: flex; flex-direction: column; gap: .35rem; text-decoration: none; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 1rem 1.1rem; }
+.event-link:hover { border-color: var(--green); }
+.event-link .t { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; }
+.event-link .go { color: var(--green); font-weight: 600; font-size: .9rem; }
+
+.group { display: flex; flex-direction: column; gap: .5rem; }
+.board { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .6rem 1.25rem; padding: .9rem 1.1rem; }
+.row + .row { border-top: 1px solid var(--line); }
+.what { flex: 1 1 11rem; min-width: 0; display: flex; flex-direction: column; gap: .15rem; }
+.label { font-weight: 600; }
+.note { color: var(--muted); font-size: .9rem; font-variant-numeric: tabular-nums; }
+.pill { align-self: flex-start; margin-top: .25rem; font-size: .75rem; font-weight: 600; padding: .1rem .55rem; border-radius: 999px; }
+.pill.open { background: var(--red-bg); color: var(--red); }
+.pill.done { background: var(--ok-bg); color: var(--green); }
+.pill.part { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+.who { flex: 1 1 13rem; min-width: 0; display: flex; flex-direction: column; gap: .5rem; }
+.claim, .blank { display: flex; align-items: flex-end; justify-content: space-between; gap: .75rem; border-bottom: 2px dotted var(--line); min-height: 2.4rem; padding-bottom: .15rem; }
+.name { font-family: var(--font-hand); font-size: 1.6rem; line-height: 1.1; overflow-wrap: anywhere; min-width: 0; }
+.btn {
+  font: inherit; font-size: .9rem; font-weight: 600; cursor: pointer; border-radius: 8px; padding: .4rem .85rem;
+  border: 1px solid var(--green); background: var(--green); color: var(--on-green); white-space: nowrap;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn[disabled] { opacity: .5; cursor: default; }
+.btn.secondary { background: transparent; color: var(--green); }
+.btn.ghost { background: transparent; color: var(--muted); border-color: transparent; font-weight: 500; padding: .2rem .4rem; }
+.btn.ghost:hover { color: var(--red); }
+.btn.ghost.confirm { color: var(--red); border-color: var(--red); }
+.btn.ghost.edit:hover, .btn.ghost.neutral:hover { color: var(--green); }
+.acts { display: flex; align-items: center; gap: .5rem; }
+.qty { font: inherit; font-size: .9rem; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: .3rem .4rem; }
+.adm { display: flex; gap: .25rem; margin-top: .25rem; }
+.extras-help { color: var(--muted); font-size: .95rem; }
+.extra-form { display: flex; flex-wrap: wrap; gap: .5rem; }
+.extra-form input { flex: 1 1 14rem; width: auto; background: var(--surface); }
+.empty { padding: .9rem 1.1rem; color: var(--muted); }
+
+.admin { display: flex; flex-direction: column; gap: .9rem; }
+.admin form { display: flex; flex-direction: column; gap: .9rem; }
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: .75rem; }
+.check { display: flex; align-items: flex-start; gap: .5rem; font-size: .95rem; }
+.check input { margin-top: .3rem; }
+.btns { display: flex; flex-wrap: wrap; gap: .5rem; }
+.bar-admin { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.org-line { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+@media (prefers-reduced-motion: reduce) { .bar { transition: none; } }
+</style>
+</head>
+<body>
+
+<main class="wrap">
+
+  <section class="view" id="homeView">
+    <header>
+      <p class="eyebrow">Fiestas y reuniones</p>
+      <h1>Pizarrón de fiestas</h1>
+      <p class="lead">Cada evento tiene su lista de cosas por juntar. Entra al que te toque, escribe tu nombre en lo que vas a llevar y vuelve cuando quieras para ver cómo va.</p>
+    </header>
+    <p class="small" id="homeStatus" aria-live="polite"></p>
+    <ul class="events" id="eventCards"></ul>
+    <div class="bar-admin" id="homeAdmin" hidden>
+      <button class="btn" type="button" id="newEventBtn">Nuevo evento</button>
+    </div>
+    <p class="msg" id="homeMsg" role="status" aria-live="polite"></p>
+
+    <div class="org-line small">
+      <button class="btn ghost neutral" type="button" id="loginBtn">Soy el organizador</button>
+      <span id="orgInfo" hidden></span>
+      <button class="btn ghost neutral" type="button" id="logoutBtn" hidden>Salir</button>
+    </div>
+    <section class="card admin" id="loginPanel" hidden>
+      <h2>Acceso del organizador</h2>
+      <form id="loginForm" autocomplete="off">
+        <div class="field"><label for="l-email">Tu correo</label><input id="l-email" type="email" inputmode="email" autocomplete="email" placeholder="tu-correo@ejemplo.com"></div>
+        <div class="btns">
+          <button class="btn" type="submit" id="loginSend">Enviarme el enlace de acceso</button>
+          <button class="btn secondary" type="button" id="loginCancel">Cancelar</button>
+        </div>
+        <p class="small" id="loginMsg" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+  </section>
+
+  <section class="view" id="eventView" hidden>
+    <a class="back" href="#">← Todos los eventos</a>
+    <header id="eventHead"></header>
+    <div id="eventBody" class="view">
+      <div class="bar-admin" id="eventAdminBar" hidden>
+        <button class="btn secondary" type="button" id="editEventBtn">Editar evento</button>
+        <button class="btn ghost" type="button" id="delEventBtn">Eliminar evento</button>
+      </div>
+
+      <section class="you card">
+        <label for="nombre">Tu nombre</label>
+        <input id="nombre" type="text" maxlength="40" autocomplete="name" placeholder="Por ejemplo: Tía Lupita">
+        <p id="msg" class="msg" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="status" aria-live="polite">
+        <p class="big" id="statusText"></p>
+        <div class="track" role="progressbar" aria-label="Aportaciones cubiertas" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0" id="track"><div class="bar" id="bar"></div></div>
+      </section>
+
+      <div class="view" id="sections"></div>
+
+      <section class="group">
+        <h2>Otras aportaciones</h2>
+        <p class="extras-help">¿Quieres llevar algo que no está en la lista? Anótalo aquí con el nombre que escribiste arriba.</p>
+        <ul class="board" id="list-extras"></ul>
+        <form class="extra-form" id="extraForm" autocomplete="off">
+          <input id="extraItem" type="text" maxlength="60" placeholder="Qué vas a llevar, por ejemplo: tamales" aria-label="Qué vas a llevar">
+          <button class="btn" type="submit" id="extraBtn">Agregar al pizarrón</button>
+        </form>
+      </section>
+
+      <section class="card admin" id="itemPanel" hidden>
+        <h2 id="itemPanelTitle">Agregar una cosa a la lista</h2>
+        <form id="itemForm" autocomplete="off">
+          <div class="fields">
+            <div class="field"><label for="i-section">Sección</label><input id="i-section" type="text" maxlength="40" list="sectionList" placeholder="Comida y bebida"><datalist id="sectionList"></datalist></div>
+            <div class="field"><label for="i-label">Qué se necesita</label><input id="i-label" type="text" maxlength="60" placeholder="Vino tinto"></div>
+            <div class="field"><label for="i-note">Detalle (opcional)</label><input id="i-note" type="text" maxlength="80" placeholder="4 botellas"></div>
+            <div class="field"><label for="i-need">Cuántas personas lo llevan</label><input id="i-need" type="number" min="1" max="99" value="1" inputmode="numeric"></div>
+          </div>
+          <label class="check" for="i-open"><input id="i-open" type="checkbox"><span>Sin límite: pueden sumarse todas las personas que quieran, como con la botana.</span></label>
+          <div class="btns">
+            <button class="btn" type="submit" id="itemSave">Agregar a la lista</button>
+            <button class="btn secondary" type="button" id="itemCancel" hidden>Cancelar</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </section>
+
+  <section class="card admin" id="eventPanel" hidden>
+    <h2 id="eventPanelTitle">Nuevo evento</h2>
+    <form id="eventForm" autocomplete="off">
+      <div class="fields">
+        <div class="field"><label for="e-name">Nombre del evento</label><input id="e-name" type="text" maxlength="60" placeholder="Cena de Navidad"></div>
+        <div class="field"><label for="e-date">Fecha</label><input id="e-date" type="date"></div>
+        <div class="field"><label for="e-time">Hora</label><input id="e-time" type="time"></div>
+        <div class="field"><label for="e-people">Personas aproximadas</label><input id="e-people" type="number" min="1" max="999" inputmode="numeric"></div>
+      </div>
+      <div class="field"><label for="e-note">Nota para todos (opcional)</label><input id="e-note" type="text" maxlength="140" placeholder="Dirección, indicaciones, a qué hora llegar"></div>
+      <div class="btns">
+        <button class="btn" type="submit" id="eventSave">Crear evento</button>
+        <button class="btn secondary" type="button" id="eventCancel">Cancelar</button>
+      </div>
+    </form>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.min.js"></script>
+<script>
+/* ============ CONFIGURACIÓN: llena estos tres datos (ver README.md) ============ */
+var CONFIG = {
+  supabaseUrl: 'https://bqqvgavwlexsbgdctakr.supabase.co/rest/v1/',      // ej. https://abcdefgh.supabase.co
+  supabaseKey: 'sb_publishable_lDJdWyX6XcfburqYOKUyDQ_NQJE99kN',      // la "Publishable key" (sb_publishable_...), NUNCA la "Secret key"
+  adminEmail:  'GVILET@viletic.onmicrosoft.com'        // el mismo correo que pusiste en schema.sql
+};
+/* ================================================================================ */
+
+(function () {
+  var events = [], items = [], claims = [];
+  var sb = null, configured = /^https?:\/\//.test(CONFIG.supabaseUrl) && CONFIG.supabaseKey.indexOf('PEGA_') !== 0;
+  var admin = false, adminMail = '';
+  var loaded = false, loadFailed = false, busy = false;
+  var confirmId = null, confirmDel = null, qty = {};
+  var evMode = null, editItemId = null, loading = false, reload = false;
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  var nameInput = $('nombre');
+  try { nameInput.value = localStorage.getItem('posada-nombre') || ''; } catch (e) {}
+  function myName() { return nameInput.value.trim().replace(/\s+/g, ' ').slice(0, 40); }
+  function same(a, b) { return String(a || '').toLowerCase() === String(b || '').toLowerCase(); }
+  function routeId() {
+    var h = location.hash.slice(1);
+    if (h.indexOf('=') >= 0) return '';
+    try { return decodeURIComponent(h); } catch (e) { return ''; }
+  }
+  function msg(t) { $('msg').textContent = t || ''; $('homeMsg').textContent = t || ''; }
+  function later(fn, ms) { setTimeout(fn, ms); }
+
+  function fmtDate(iso) {
+    var p = String(iso || '').split('-');
+    if (p.length !== 3) return '';
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  function fmtTime(t) {
+    if (!t) return '';
+    var p = String(t).split(':'), h = +p[0], m = p[1] || '00';
+    if (isNaN(h)) return '';
+    var s = h >= 12 ? 'pm' : 'am';
+    h = h % 12 || 12;
+    return h + ':' + m + ' ' + s;
+  }
+  function factsFor(ev) {
+    var f = [];
+    if (fmtDate(ev.date)) f.push(fmtDate(ev.date));
+    if (fmtTime(ev.time)) f.push(fmtTime(ev.time));
+    if (ev.people) f.push('Unas ' + ev.people + ' personas');
+    return f;
+  }
+  function itemsOf(eid) {
+    return items.filter(function (i) { return i.event === eid; }).sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+  }
+  function claimsOf(iid) { return claims.filter(function (c) { return c.item === iid; }); }
+  function limitOf(i) { return i.open ? Infinity : Math.max(1, i.need || 1); }
+  function isShared(i) { return !i.open && (i.need || 1) > 1; }
+  function isDone(i, list) { return i.open ? list.length > 0 : list.length >= limitOf(i); }
+  function progressOf(eid) {
+    var its = itemsOf(eid), done = 0;
+    its.forEach(function (i) { if (isDone(i, claimsOf(i.id))) done++; });
+    return { total: its.length, done: done };
+  }
+  function newEventId(name) {
+    var base = name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'evento';
+    var id = base, n = 2;
+    while (events.some(function (e) { return e.id === id; })) { id = base + '-' + n; n++; }
+    return id;
+  }
+  function handleErr(err, adminOp) {
+    var m = (err && err.message) || '';
+    if ((err && err.code === '42501') || /row-level security/i.test(m)) {
+      msg(adminOp ? 'Solo el organizador puede hacer este cambio. Inicia sesión como organizador.' : 'No se pudo guardar con los permisos actuales.');
+    } else if (/llenaron/i.test(m)) { msg('Ya se llenaron los lugares. Revisa el pizarrón.'); }
+    else if (/anotado/i.test(m)) { msg('Ya estás anotado en esto.'); }
+    else { msg('No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.'); }
+  }
+
+  /* ---------- filas ---------- */
+  function claimLine(c, count) {
+    var line = el('div', 'claim');
+    line.appendChild(el('span', 'name', (c.name || '') + (count > 1 ? ' ×' + count : '')));
+    var mine = myName() && same(c.name, myName());
+    if (loaded && (mine || admin)) {
+      var asking = confirmId === c.id;
+      var rm = count > 1 ? 'Quitar una' : 'Quitar';
+      var b = el('button', 'btn ghost' + (asking ? ' confirm' : ''), asking ? '¿Seguro? ' + rm : rm);
+      b.type = 'button';
+      b.addEventListener('click', function () { removeClaim(c); });
+      line.appendChild(b);
+    }
+    return line;
+  }
+  function addButton(label, onClick) {
+    var b = el('button', 'btn', label);
+    b.type = 'button'; b.disabled = busy;
+    b.addEventListener('click', onClick);
+    return b;
+  }
+  function actions(item, remaining, label) {
+    var box = el('div', 'acts');
+    if (isShared(item) && remaining > 1) {
+      box.appendChild(el('span', 'note', 'Cuántas'));
+      var sel = el('select', 'qty');
+      sel.id = 'qty-' + item.id;
+      sel.setAttribute('aria-label', 'Cuántas piezas vas a llevar');
+      for (var i = 1; i <= remaining; i++) { var o = el('option', null, String(i)); o.value = String(i); sel.appendChild(o); }
+      sel.value = String(Math.min(qty[item.id] || 1, remaining));
+      sel.addEventListener('change', function () { qty[item.id] = parseInt(sel.value, 10) || 1; });
+      box.appendChild(sel);
+    }
+    box.appendChild(addButton(label, function () { claim(item); }));
+    return box;
+  }
+  function adminButtons(item) {
+    var box = el('div', 'adm');
+    var ed = el('button', 'btn ghost edit', 'Editar'); ed.type = 'button';
+    ed.addEventListener('click', function () { startEditItem(item); });
+    var key = 'i:' + item.id, asking = confirmDel === key;
+    var del = el('button', 'btn ghost' + (asking ? ' confirm' : ''), asking ? '¿Seguro? Eliminar' : 'Eliminar'); del.type = 'button';
+    del.addEventListener('click', function () { removeItem(item); });
+    box.appendChild(ed); box.appendChild(del);
+    return box;
+  }
+  function rowFor(item) {
+    var list = claimsOf(item.id).sort(function (a, b) { return (a.at || 0) - (b.at || 0); });
+    var li = el('li', 'row');
+    var taken = list.length > 0, lim = limitOf(item), done = isDone(item, list), full = !item.open && list.length >= lim;
+    var what = el('div', 'what');
+    what.appendChild(el('span', 'label', item.label));
+    if (item.note) what.appendChild(el('span', 'note', item.note));
+    what.appendChild(el('span', 'pill ' + (done ? 'done' : (taken ? 'part' : 'open')), done ? 'Cubierto' : (taken ? list.length + ' de ' + lim : 'Falta')));
+    if (admin && loaded) what.appendChild(adminButtons(item));
+    var who = el('div', 'who');
+    if (isShared(item)) {
+      var groups = [];
+      list.forEach(function (c) {
+        var g = groups.filter(function (x) { return same(x[0].name, c.name); })[0];
+        if (g) g.push(c); else groups.push([c]);
+      });
+      groups.forEach(function (g) { who.appendChild(claimLine(g[g.length - 1], g.length)); });
+    } else {
+      list.forEach(function (c) { who.appendChild(claimLine(c, 1)); });
+    }
+    var canAdd = loaded && !full;
+    if (!taken) {
+      var blank = el('div', 'blank');
+      blank.appendChild(el('span', 'name', ''));
+      if (canAdd) blank.appendChild(actions(item, lim, 'Anotarme'));
+      who.appendChild(blank);
+    } else if (canAdd) {
+      var act = el('div', 'blank');
+      act.appendChild(el('span', 'note', item.open ? 'Suma otra aportación' : 'Faltan ' + (lim - list.length)));
+      act.appendChild(actions(item, item.open ? 1 : lim - list.length, 'Sumarme'));
+      who.appendChild(act);
+    }
+    li.appendChild(what); li.appendChild(who);
+    return li;
+  }
+
+  /* ---------- vistas ---------- */
+  function renderHome() {
+    var st = $('homeStatus');
+    if (!configured) st.textContent = 'Falta configurar Supabase. Abre index.html y llena la sección CONFIGURACIÓN (ver README.md).';
+    else if (loadFailed && !loaded) st.textContent = 'No se pudo conectar con el pizarrón. Revisa tu conexión e inténtalo de nuevo.';
+    else if (!loaded) st.textContent = 'Cargando eventos…';
+    else if (!events.length) st.textContent = admin ? 'Todavía no hay eventos. Crea el primero con «Nuevo evento».' : 'Todavía no hay eventos. El organizador los irá agregando.';
+    else st.textContent = '';
+    var ul = $('eventCards'); ul.textContent = '';
+    events.slice().sort(function (a, b) { return String(a.date || '9').localeCompare(String(b.date || '9')) || (a.createdAt || 0) - (b.createdAt || 0); }).forEach(function (ev) {
+      var li = el('li');
+      var a = el('a', 'event-link'); a.href = '#' + ev.id;
+      a.appendChild(el('span', 't', ev.name || 'Evento'));
+      var f = factsFor(ev);
+      if (f.length) a.appendChild(el('span', 'note', f.join(' · ')));
+      var p = progressOf(ev.id);
+      a.appendChild(el('span', 'small', p.total ? p.done + ' de ' + p.total + ' cosas cubiertas' : 'Lista por armar'));
+      a.appendChild(el('span', 'go', 'Abrir pizarrón →'));
+      li.appendChild(a); ul.appendChild(li);
+    });
+    $('homeAdmin').hidden = !(admin && loaded);
+    $('loginBtn').hidden = admin || !configured;
+    $('logoutBtn').hidden = !adminMail;
+    $('orgInfo').hidden = !adminMail;
+    $('orgInfo').textContent = adminMail ? 'Sesión: ' + adminMail + (admin ? '' : ' (no es el correo del organizador)') : '';
+  }
+
+  function renderEvent(id) {
+    var ev = events.filter(function (e) { return e.id === id; })[0];
+    var head = $('eventHead'); head.textContent = '';
+    $('eventBody').hidden = !ev;
+    if (!ev) {
+      head.appendChild(el('h1', null, loaded ? 'No encontré este evento' : 'Cargando…'));
+      if (loaded) head.appendChild(el('p', 'lead', 'Puede que el organizador lo haya eliminado. Vuelve a la lista de eventos.'));
+      return;
+    }
+    head.appendChild(el('p', 'eyebrow', 'Evento'));
+    head.appendChild(el('h1', null, ev.name || 'Evento'));
+    var f = factsFor(ev);
+    if (f.length) { var ul = el('ul', 'facts'); f.forEach(function (t) { ul.appendChild(el('li', null, t)); }); head.appendChild(ul); }
+    if (ev.note) head.appendChild(el('p', 'lead', ev.note));
+
+    var p = progressOf(id);
+    $('statusText').textContent = !loaded ? 'Cargando lo que ya se anotó…' : (p.total ? p.done + ' de ' + p.total + ' cosas ya tienen quién las lleve.' : (admin ? 'La lista está vacía. Agrega la primera cosa abajo.' : 'El organizador todavía no agrega cosas a este evento.'));
+    $('track').setAttribute('aria-valuemax', String(p.total || 1));
+    $('track').setAttribute('aria-valuenow', String(p.done));
+    $('bar').style.width = (p.total ? Math.round(p.done / p.total * 100) : 0) + '%';
+
+    var box = $('sections'); box.textContent = '';
+    var order = [], bySec = {};
+    itemsOf(id).forEach(function (i) {
+      var s = (i.section || '').trim() || 'Por llevar';
+      if (!bySec[s]) { bySec[s] = []; order.push(s); }
+      bySec[s].push(i);
+    });
+    order.forEach(function (s) {
+      var sec = el('section', 'group');
+      sec.appendChild(el('h2', null, s));
+      var ulb = el('ul', 'board');
+      bySec[s].forEach(function (i) { ulb.appendChild(rowFor(i)); });
+      sec.appendChild(ulb); box.appendChild(sec);
+    });
+    var dl = $('sectionList'); dl.textContent = '';
+    order.forEach(function (s) { var o = el('option'); o.value = s; dl.appendChild(o); });
+
+    var ex = $('list-extras'); ex.textContent = '';
+    var extras = claims.filter(function (c) { return c.event === id && c.item === 'extra'; }).sort(function (a, b) { return (a.at || 0) - (b.at || 0); });
+    if (!extras.length) ex.appendChild(el('li', 'empty', 'Todavía nadie ha agregado algo extra.'));
+    extras.forEach(function (c) {
+      var li = el('li', 'row');
+      var what = el('div', 'what');
+      what.appendChild(el('span', 'label', c.label || 'Algo extra'));
+      what.appendChild(el('span', 'pill done', 'Cubierto'));
+      var who = el('div', 'who'); who.appendChild(claimLine(c, 1));
+      li.appendChild(what); li.appendChild(who); ex.appendChild(li);
+    });
+    $('extraBtn').disabled = busy || !loaded;
+    $('extraItem').disabled = !loaded;
+    $('eventAdminBar').hidden = !(admin && loaded);
+    $('itemPanel').hidden = !(admin && loaded);
+    var dv = $('delEventBtn'), asking = confirmDel === 'e:' + id;
+    dv.textContent = asking ? '¿Seguro? Eliminar evento y todo lo anotado' : 'Eliminar evento';
+    dv.className = 'btn ghost' + (asking ? ' confirm' : '');
+  }
+
+  function render() {
+    var id = routeId();
+    $('homeView').hidden = !!id;
+    $('eventView').hidden = !id;
+    $('eventPanel').hidden = !evMode;
+    if (id) renderEvent(id); else renderHome();
+  }
+
+  /* ---------- datos (Supabase) ---------- */
+  async function loadAll() {
+    if (!sb) return;
+    if (loading) { reload = true; return; }
+    loading = true;
+    try {
+      var res = await Promise.all([
+        sb.from('events').select('*'),
+        sb.from('items').select('*'),
+        sb.from('claims').select('*').order('created_at', { ascending: true })
+      ]);
+      if (res[0].error || res[1].error || res[2].error) throw (res[0].error || res[1].error || res[2].error);
+      events = res[0].data.map(function (r) { return { id: r.id, name: r.name, date: r.date || '', time: r.time || '', people: r.people, note: r.note || '', createdAt: Date.parse(r.created_at) || 0 }; });
+      items = res[1].data.map(function (r) { return { id: r.id, event: r.event_id, section: r.section, label: r.label, note: r.note || '', need: r.need, open: r.open, order: r.sort_order }; });
+      claims = res[2].data.map(function (r) { return { id: r.id, event: r.event_id, item: r.item_id || 'extra', name: r.name, label: r.label, at: Date.parse(r.created_at) || 0 }; });
+      loaded = true; loadFailed = false;
+    } catch (e) { loadFailed = true; }
+    loading = false;
+    render();
+    if (reload) { reload = false; loadAll(); }
+  }
+
+  async function claim(item) {
+    var n = myName();
+    if (!n) { msg('Escribe tu nombre arriba para anotarte.'); nameInput.focus(); return; }
+    if (busy) return;
+    busy = true; render();
+    var cur = claimsOf(item.id);
+    var want = isShared(item) ? Math.min(qty[item.id] || 1, limitOf(item) - cur.length) : 1;
+    if (!isShared(item) && cur.some(function (c) { return same(c.name, n); })) {
+      msg('Ya estás anotado en esto.');
+    } else if (want < 1) {
+      msg('Ya se llenaron los lugares. Revisa el pizarrón.');
+    } else {
+      var rows = [];
+      for (var i = 0; i < want; i++) rows.push({ event_id: item.event, item_id: item.id, name: n });
+      var r = await sb.from('claims').insert(rows);
+      if (r.error) handleErr(r.error, false); else { qty[item.id] = 1; msg(''); }
+    }
+    await loadAll();
+    busy = false; render();
+  }
+  async function removeClaim(c) {
+    if (busy) return;
+    if (confirmId !== c.id) {
+      confirmId = c.id; render();
+      later(function () { if (confirmId === c.id) { confirmId = null; render(); } }, 4000);
+      return;
+    }
+    confirmId = null; busy = true; render();
+    var r = await sb.from('claims').delete().eq('id', c.id);
+    if (r.error) handleErr(r.error, false); else msg('');
+    await loadAll();
+    busy = false; render();
+  }
+  $('extraForm').addEventListener('submit', async function (ev) {
+    ev.preventDefault();
+    var n = myName(), label = $('extraItem').value.trim().replace(/\s+/g, ' ').slice(0, 60), eid = routeId();
+    if (!n) { msg('Escribe tu nombre arriba para anotarte.'); nameInput.focus(); return; }
+    if (!label) { msg('Escribe qué vas a llevar.'); $('extraItem').focus(); return; }
+    if (busy || !sb) return;
+    busy = true; render();
+    var r = await sb.from('claims').insert({ event_id: eid, item_id: null, label: label, name: n });
+    if (r.error) handleErr(r.error, false); else { $('extraItem').value = ''; msg(''); }
+    await loadAll();
+    busy = false; render();
+  });
+  nameInput.addEventListener('input', function () {
+    try { localStorage.setItem('posada-nombre', nameInput.value); } catch (e) {}
+    if (myName()) msg('');
+    render();
+  });
+
+  /* ---------- acciones del organizador ---------- */
+  function scrollTo(id) { try { $(id).scrollIntoView({ block: 'center' }); } catch (e) {} }
+  function openEventForm(mode) {
+    evMode = mode;
+    var ev = events.filter(function (e) { return e.id === routeId(); })[0];
+    var edit = mode === 'edit' && ev;
+    $('eventPanelTitle').textContent = mode === 'edit' ? 'Editar evento' : 'Nuevo evento';
+    $('eventSave').textContent = mode === 'edit' ? 'Guardar cambios' : 'Crear evento';
+    $('e-name').value = edit ? ev.name || '' : '';
+    $('e-date').value = edit ? ev.date || '' : '';
+    $('e-time').value = edit ? ev.time || '' : '';
+    $('e-people').value = edit && ev.people ? ev.people : '';
+    $('e-note').value = edit ? ev.note || '' : '';
+    render(); scrollTo('eventPanel'); $('e-name').focus();
+  }
+  $('newEventBtn').addEventListener('click', function () { openEventForm('new'); });
+  $('editEventBtn').addEventListener('click', function () { openEventForm('edit'); });
+  $('eventCancel').addEventListener('click', function () { evMode = null; render(); });
+  $('eventForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var name = $('e-name').value.trim().replace(/\s+/g, ' ');
+    if (!name) { msg('Escribe el nombre del evento.'); $('e-name').focus(); return; }
+    var people = parseInt($('e-people').value, 10);
+    var data = { name: name, date: $('e-date').value || null, time: $('e-time').value || null, people: people > 0 ? people : null, note: $('e-note').value.trim() };
+    if (busy || !sb) return;
+    busy = true;
+    var goTo = null, r;
+    if (evMode === 'edit') { r = await sb.from('events').update(data).eq('id', routeId()); }
+    else { data.id = newEventId(name); r = await sb.from('events').insert(data); goTo = data.id; }
+    if (r.error) handleErr(r.error, true);
+    else { evMode = null; msg(''); await loadAll(); if (goTo) location.hash = goTo; }
+    busy = false; render();
+  });
+  async function removeEvent() {
+    var id = routeId(), key = 'e:' + id;
+    if (confirmDel !== key) { confirmDel = key; render(); later(function () { if (confirmDel === key) { confirmDel = null; render(); } }, 5000); return; }
+    confirmDel = null; busy = true; render();
+    var r = await sb.from('events').delete().eq('id', id);
+    if (r.error) handleErr(r.error, true); else { await loadAll(); location.hash = ''; }
+    busy = false; render();
+  }
+  $('delEventBtn').addEventListener('click', removeEvent);
+
+  function resetItemForm() {
+    editItemId = null;
+    $('itemForm').reset(); $('i-need').disabled = false; $('i-need').value = '1';
+    $('itemPanelTitle').textContent = 'Agregar una cosa a la lista';
+    $('itemSave').textContent = 'Agregar a la lista';
+    $('itemCancel').hidden = true;
+  }
+  function startEditItem(item) {
+    editItemId = item.id;
+    $('i-section').value = item.section || '';
+    $('i-label').value = item.label || '';
+    $('i-note').value = item.note || '';
+    $('i-need').value = item.need || 1;
+    $('i-open').checked = !!item.open; $('i-need').disabled = !!item.open;
+    $('itemPanelTitle').textContent = 'Editar esta cosa';
+    $('itemSave').textContent = 'Guardar cambios';
+    $('itemCancel').hidden = false;
+    scrollTo('itemPanel'); $('i-label').focus();
+  }
+  $('i-open').addEventListener('change', function () { $('i-need').disabled = $('i-open').checked; });
+  $('itemCancel').addEventListener('click', resetItemForm);
+  $('itemForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var label = $('i-label').value.trim().replace(/\s+/g, ' ');
+    if (!label) { msg('Escribe qué se necesita.'); $('i-label').focus(); return; }
+    var need = parseInt($('i-need').value, 10); if (!(need >= 1)) need = 1; if (need > 99) need = 99;
+    var data = { event_id: routeId(), section: $('i-section').value.trim() || 'Por llevar', label: label, note: $('i-note').value.trim(), need: need, open: $('i-open').checked };
+    if (busy || !sb) return;
+    busy = true;
+    var r;
+    if (editItemId) { r = await sb.from('items').update(data).eq('id', editItemId); }
+    else { data.sort_order = Date.now(); r = await sb.from('items').insert(data); }
+    if (r.error) handleErr(r.error, true);
+    else { var sec = data.section; resetItemForm(); $('i-section').value = sec; msg(''); await loadAll(); }
+    busy = false; render();
+  });
+  async function removeItem(item) {
+    var key = 'i:' + item.id;
+    if (confirmDel !== key) { confirmDel = key; render(); later(function () { if (confirmDel === key) { confirmDel = null; render(); } }, 4000); return; }
+    confirmDel = null; busy = true; render();
+    var r = await sb.from('items').delete().eq('id', item.id);
+    if (r.error) handleErr(r.error, true); else { if (editItemId === item.id) resetItemForm(); await loadAll(); }
+    busy = false; render();
+  }
+
+  /* ---------- acceso del organizador ---------- */
+  function setSession(session) {
+    var mail = session && session.user && session.user.email ? session.user.email : '';
+    adminMail = mail;
+    admin = !!mail && mail.toLowerCase() === CONFIG.adminEmail.toLowerCase();
+    render();
+  }
+  $('loginBtn').addEventListener('click', function () { $('loginPanel').hidden = false; $('l-email').focus(); });
+  $('loginCancel').addEventListener('click', function () { $('loginPanel').hidden = true; $('loginMsg').textContent = ''; });
+  $('logoutBtn').addEventListener('click', async function () { if (sb) await sb.auth.signOut(); });
+  $('loginForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var mail = $('l-email').value.trim();
+    var lm = $('loginMsg');
+    if (!mail) { lm.textContent = 'Escribe tu correo.'; return; }
+    if (mail.toLowerCase() !== CONFIG.adminEmail.toLowerCase()) { lm.textContent = 'Ese correo no es el del organizador.'; return; }
+    if (!sb) return;
+    lm.textContent = 'Enviando…';
+    var r = await sb.auth.signInWithOtp({ email: mail, options: { emailRedirectTo: location.origin + location.pathname } });
+    lm.textContent = r.error ? 'No se pudo enviar el enlace. Inténtalo en unos minutos.' : 'Listo. Abre el enlace que te llegó al correo, en este mismo navegador.';
+  });
+
+  window.addEventListener('hashchange', function () { evMode = null; confirmDel = null; confirmId = null; resetItemForm(); msg(''); render(); window.scrollTo(0, 0); });
+
+  render();
+
+  /* ---------- arranque ---------- */
+  if (configured && window.supabase) {
+    sb = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey, { auth: { flowType: 'pkce', persistSession: true, detectSessionInUrl: true } });
+    sb.auth.onAuthStateChange(function (evt, session) { setSession(session); });
+    sb.auth.getSession().then(function (r) { setSession(r && r.data ? r.data.session : null); });
+    loadAll();
+    try {
+      sb.channel('pizarron')
+        .on('postgres_changes', { event: '*', schema: 'public' }, function () { loadAll(); })
+        .subscribe();
+    } catch (e) {}
+    setInterval(function () { if (!busy && !document.hidden) loadAll(); }, 30000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) loadAll(); });
+  } else if (configured) {
+    loadFailed = true; render();
+  }
+})();
+</script>
+</body>
+</html>
